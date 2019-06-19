@@ -1,0 +1,294 @@
+---
+title: "dplyr"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## dplyr简介
+
+dplyr软件包是R中功能最强大，最受欢迎的软件包之一。该软件包由最受欢迎的R程序员Hadley Wickham编写，他编写了许多有用的R软件包，如ggplot2，tidyr等。本文包括一些示例和如何使用使用dplyr软件包来清理和转换数据。这是一个关于数据操作和数据处理的完整教程。
+
+## 什么是dplyr及其特点
+1. dplyr是一个强大的R软件包，用于处理，清理和汇总非结构化数据。简而言之，它使得R中的数据探索和数据操作变得简单快捷。
+2. 软件包“dplyr”包含许多主要使用的数据操作功能，例如应用过滤器，选择特定列，排序数据，添加或删除列以及聚合数据。这个包的另一个最重要的优点是学习和使用dplyr函数非常容易。也很容易回想起这些功能。例如，filter（）用于过滤行。
+3. dplyr函数处理速度比基本R函数快。这是因为dplyr函数是以计算有效的方式编写的。 它们在语法上也更稳定，并且比向量更好地支持数据帧。
+4. 数十年来人们一直在使用SQL来分析数据。每个现代数据分析软件如Python，R，SAS等都支持SQL命令。 但SQL从未被设计为执行数据分析。它专为查询和管理数据而设计。 有许多数据分析操作在SQL失败或使简单的事情困难。例如，计算多个变量的中位数，将宽格式数据转换为长格式等。而dplyr软件包的设计目的是进行数据分析。
+
+>dplyr函数的名称类似于SQL命令，如用于选择变量的select（），group_by（）-通过对变量进行分组来组合数据，join（）-将两个数据集合在一起。还包括inner_join（）和left_join（）。它也支持SQL常用的子查询。
+
+##dplry安装
+
+`install.packages("dplyr")`
+`install.packages("rmarkdown")`
+`install.packages("kableExtra")`
+
+```{r message=FALSE, warning=FALSE}
+library(knitr)
+library(dplyr)
+library(rmarkdown)
+library(kableExtra)
+```
+
+##常用dplyr的函数
+![](./dplyr_fun.png)
+
+##示例数据
+包含2002年至2015年各州产生的收入,包含51个观测值（行）和16个变量（列)
+##加载数据
+
+```{r echo=TRUE}
+mydata <- read.csv("http://bailab.genetics.ac.cn/markdown/R/dplyr/sampledata.csv")
+head(mydata) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+### 实例1:随机选择N行
+sample_n函数从数据框（或表）中随机选择行。 函数的第二个参数告诉R要选择的行数.
+```{r echo=TRUE}
+sample_n(mydata, 3) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+### 实例2:随机选择总行的N%
+sample_frac函数随机返回N％的行。 在下面的例子中，它随机返回10％的行.
+```{r}
+sample_frac(mydata, 0.1) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+### 实例3:基于所有变量（完整行）删除重复行
+distinct函数用于消除重复行
+```{r}
+y = rbind(head(mydata), head(mydata))
+dim(y)
+x1 <-  dplyr::distinct(y)
+dim(x1)
+#在此数据集中，我们取前6行重复一次共12行，去冗余返回6行
+```
+
+### 实例4:基于单个变量删除重复行
+**.keep_all**函数用于保留输出数据框中的所有其他变量。
+```{r}
+x2 <- dplyr::distinct(mydata, Index, .keep_all= TRUE)
+dim(mydata)
+dim(x2)
+###按某列去冗余，52行变为19行，只保留第一次出现的行
+```
+
+### 实例5:基于多个变量删除重复行
+在下面的例子中，我们使用两个变量 - Index，Y2010来确定唯一性。
+```{r}
+x3 <-  dplyr::distinct(mydata, Index, Y2010, .keep_all= TRUE)
+dim(mydata)
+dim(x3)
+```
+
+###实例6：选择变量（或列）
+假设你被要求只选择几个变量。 下面的代码选择变量“Index”，从“State”到“Y2008”的列。
+```{r}
+select(mydata, Index, State:Y2008) %>% head %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) 
+```
+
+
+### 实例7：删除变量
+变量前面的减号表示R放弃变量。
+```{r}
+select(mydata, -Index, -State) %>% do(head(.)) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+#do(head(.)) 可写作head/head()
+#上面的代码也可以写成：
+#mydata4 <- select(mydata, -c(Index, State)) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+### 实例8：选择或删除以”Y”开始的变量
+starts_with（）函数用于选择以字母开头的变量。
+```{r}
+select(mydata, starts_with('Y'))  %>% head %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+#在starts_with（）之前添加一个负号表示将删除以’Y’开始的变量
+#mydata6 <- select(mydata, -starts_with('Y'))
+```
+以下函数可帮助根据名称选择变量。
+
+![](./select_help.png)
+
+###实例9：选择变量名中包含”l”的变量
+`mydata7 <- select(mydata, contains('l'))`
+
+###实例10：重新排列变量
+下面的代码保持变量’State’在前面，其余的变量跟随其后。
+`mydata8 <- select(mydata, State, everything())`
+
+###实例11：变量重命名
+rename函数可用于重命名变量。
+在下面的代码中，我们将’Index’变量重命名为’Index1’。
+```{r}
+mydata9 <- rename(mydata, Index1=Index)
+names(mydata9)
+```
+
+
+###实例12：选择行
+假设你需要子集数据。 想过滤行并仅保留Index等于A的那些值。
+```{r}
+filter(mydata, Index == "A") %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+
+###实例13：多重选择标准
+%in%运算符可用于选择多个项目。 在下面的程序中，我们告诉R选择Index列中的’A’和’C’行。
+```{r}
+filter(mydata, Index %in% c("A", "C")) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例14：选择标准中的’AND’条件
+假设你需要应用’AND’条件。 在这种情况下，我们在“索引”栏中选择’A’和’C’的数据，并在2002年收入超过130万美元。
+```{r}
+filter(mydata, Index %in% c("A", "C") & Y2002 >= 1300000) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例15：选择标准中的’OR’条件
+‘|’表示逻辑条件中的或。 它意味着这两个条件中的任何一个。
+```{r}
+filter(mydata, Index %in% c("A", "C") | Y2002 >= 1300000) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例16：非条件
+“！” 符号用于反转逻辑条件。
+```{r}
+filter(mydata, !Index %in% c("A", "C")) %>% head %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例17：包含条件
+grepl函数用于搜索模式匹配。 在下面的代码中，我们正在查找state列包含“Ar”的记录。
+
+`mydata17 <- filter(mydata, grepl("Ar", State))`
+
+###实例18：总结选定的变量 
+在下面的例子中，我们计算了变量Y2015的平均值和中位数。
+```{r}
+summarise(mydata, Y2015_mean = mean(Y2015), Y2015_med=median(Y2015))
+```
+
+###实例19：总结多个变量
+在下面的例子中，我们计算了记录的数量，变量Y2005和Y2006的平均值和中位数。 summarise_at函数允许我们通过名称选择多个变量。
+```{r}
+summarise_at(mydata, vars(Y2005, Y2006), funs(n(), mean, median))
+```
+
+###实例20：用自定义函数进行总结
+我们也可以在汇总功能中使用自定义函数。 在这种情况下，我们计算记录数，缺失值的数量，变量Y2011和Y2012的平均数和中位数。 点（.）表示函数的第二个参数中指定的每个变量。
+
+```{r}
+summarise_at(mydata, vars(Y2011, Y2012),
+         funs(n(), missing = sum(is.na(.)), 
+         mean(., na.rm = TRUE), 
+         median(.,na.rm = TRUE)))
+```
+
+###实例21：总结所有的数字变量
+summarise_if函数允许有条件地总结。
+```{r}
+summarise_if(mydata, is.numeric, funs(n(),mean,median))
+#或者
+#numdata <- mydata[sapply(mydata,is.numeric)]
+#summarise_all(numdata, funs(n(),mean,median))
+```
+
+###实例22：总结因子变量
+我们正在检查分类（因子）变量中的级别/类别数量和缺失观察数量。
+```{r}
+summarise_all(mydata["Index"], funs(nlevels(.), nmiss=sum(is.na(.))))
+```
+
+###实例23：按多个变量排序数据,默认升序,desc()降序
+arrange（）函数的默认排序顺序是递增的。在这个例子中，我们通过多个变量来排序数据。
+
+`arrange(mydata, Index, Y2011)`
+
+假设你需要按降序对其中一个变量进行排序，而对其他变量则按升序排序。
+
+`arrange(mydata, desc(Index), Y2011)`
+
+###实例24：按分类变量汇总数据
+我们通过变量Index计算变量Y2011和Y2012的变量的计数和均值。
+
+```{r}
+mydata %>% group_by(Index) %>% summarise_at(vars(Y2011:Y2015), funs(n(), mean(., na.rm = TRUE))) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例25：过滤分类变量中的数据
+假设需要从“A”，“C”和“I”类别的变量索引中抽取前两行。
+```{r}
+mydata %>% filter(Index %in% c("A", "C","I")) %>% group_by(Index) %>%
+  do(head( . , 2)) %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+其中%>% group_by(Index)为必须,如若会出现以下情况
+```{r}
+mydata %>% filter(Index %in% c("A", "C","I"))  %>% do(head( . , 2)) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例26：通过分类变量选择第三最大值
+我们正在通过变量Index计算变量Y2015的第三个最大值。 以下代码首先仅选择两个变量Index和Y2015。 然后它用’A’，’C’和’I’过滤变量索引，然后对变量进行分组，然后按降序对变量Y2015进行排序。 最后，它选择第三行。
+
+```{r}
+t <- mydata %>% 
+  select(Index, Y2015) %>%
+  filter(Index %in% c("A", "C","I")) %>%
+  group_by(Index) %>%
+  do(arrange(.,desc(Y2015))) %>%  
+  slice(3)
+t
+```
+
+像SQL一样，dplyr使用窗口函数来将数据分组。 它返回值的向量。 我们可以使用min_rank（）函数来计算上例中的rank,**推荐使用该种表现形式**
+
+初始选在/排序如下:
+
+```{r}
+mydata %>% select(Index, Y2015) %>%
+  filter(Index %in% c("A", "C","I")) %>%
+  group_by(Index) 
+```
+
+选则第三行
+```{r}
+t <- mydata %>% select(Index, Y2015) %>%
+  filter(Index %in% c("A", "C","I")) %>%
+  group_by(Index) %>%
+  filter(min_rank(desc(Y2015)) ==3)
+t
+```
+
+###实例27：总结，分组和排序
+在这种情况下，我们通过变量Index来计算变量Y2014和Y2015的均值。 然后通过计算的变量Y2015的均值对结果进行排序。
+
+```{r}
+mydata %>%
+  group_by(Index) %>%
+  summarise(Mean_2014 = mean(Y2014, na.rm=TRUE),
+            Mean_2015 = mean(Y2015, na.rm=TRUE)) %>%
+  arrange(desc(Mean_2015))
+```
+
+
+###实例28：创建一个新变量
+以下代码用变量Y2015除以Y2014的的值其命名为“change”。
+
+```{r}
+mydata15 <- mutate(mydata, change=Y2015/Y2014)
+mydata15 %>% head %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+###实例29：将所有变量乘以1000
+它创建新的变量并用后缀“_new”命名。
+
+`mydata11 <- mutate_all(mydata, funs("new" = .* 1000))`
+
+###实例30：计算变量的排名
+假设需要计算变量Y2008至Y2010的排名。添加排名到列尾。
+
+```{r}
+mutate_at(mydata, vars(Y2008:Y2010), funs(Rank=min_rank(.))) %>% head %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+

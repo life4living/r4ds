@@ -1,0 +1,157 @@
+---
+title: "R4DS_7_Exploratory Data Analysis"
+author: "nihil"
+date: "6/19/2019"
+output: html_document
+---
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library("ggplot2")
+library("tidyverse")
+#install.packages("kableExtra")
+library("kableExtra")
+library("nycflights13")
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## [7 Exploratory Data Analysis (EDA)](https://r4ds.had.co.nz/exploratory-data-analysis.html)
+
+> EDA is fundamentally a creative process. And like most creative processes, the key to asking quality questions is to generate a large quantity of questions. It is difficult to ask revealing questions at the start of your analysis because you do not know what insights are contained in your dataset. On the other hand, each new question that you ask will expose you to a new aspect of your data and increase your chance of making a discovery. You can quickly drill down into the most interesting parts of your data—and develop a set of thought-provoking questions—if you follow up each question with a new question based on what you find.
+
+Two types of questions will always be useful for making discoveries within your data. You can loosely word these questions as:
+
+1. What type of variation occurs within my variables?
+2. What type of covariation occurs between my variables?
+3. Use what you learn to refine your questions and/or generate new questions.
+
+> “There are no routine statistical questions, only questionable statistical routines.” — Sir David Cox
+
+> “Far better an approximate answer to the right question, which is often vague, than an exact answer to the wrong question, which can always be made precise.” — John Tukey
+
+### 7.3 Variation
+
+categorical and continuous variables
+
+- categorical variables
+In R, categorical variables are usually saved as factors or character vectors.
+
+
+```{r categorical variables}
+ggplot(data = diamonds) +  geom_bar(mapping = aes(x = cut))
+
+diamonds %>% count(cut)  %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+```
+
+- continuous variables 
+A variable is continuous if it can take any of an infinite set of ordered values. Numbers and date-times are two examples of continuous variables. 
+
+``` {r geom_histogram}
+ggplot(data = diamonds) +
+  geom_histogram(mapping = aes(x = carat), binwidth = 0.5)
+```
+
+```{r geom_freqpoly}
+smaller <- diamonds %>% 
+  filter(carat < 3)
+
+ggplot(data = smaller, mapping = aes(x = carat, colour = cut)) +
+  geom_freqpoly(binwidth = 0.1)
+```
+`geom_freqpoly()`performs the same calculation as`geom_histogram()`, but instead of displaying the counts with bars, uses lines instead. It’s much easier to understand overlapping lines than bars.
+
+
+```{r}
+diamonds %>% 
+  count(cut_width(carat, 0.5)) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+  # combining dplyr::count() and ggplot2::cut_width()
+```
+
+#### 7.3.3 Unusual values
+
+deal with outliers
+- unusual 
+- don't fit the pattern
+- sometimes are data entry errors
+- sometimes are new discover
+**outliers are sometimes difficult to see in a histogram**
+
+To make it easy to see the unusual values, we need to zoom to small values of the y-axis with `coord_cartesian()`
+
+```{r}
+ggplot(diamonds) + 
+  geom_histogram(mapping = aes(x = y), binwidth = 0.5)
+
+ggplot(diamonds) + 
+  geom_histogram(mapping = aes(x = y), binwidth = 0.5) +
+  coord_cartesian(ylim = c(0, 50))
+```
+`coord_cartesian()` also has an `xlim()` argument for when you need to zoom into the x-axis. ggplot2 also has `xlim()` and `ylim()`functions that work slightly differently: they throw away the data outside the limits.
+
+```{r unusual data}
+diamonds %>% 
+  filter(y < 3 | y > 20) %>% 
+  select(price, x, y, z) %>%
+  arrange(y)  %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))  %>%
+  scroll_box(width = "100%", height = "200px")
+```
+
+### 7.4 Missing values
+
+```{r drop or replace unusual values}
+diamonds %>% 
+  filter(between(y, 3, 20)) %>%  head(10) %>% kable()  %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+diamonds2 <- diamonds %>% 
+  mutate(y = ifelse(y < 3 | y > 20, NA, y)) 
+```
+
+use ggplot2 to omit missing values (**Like R, ggplot2 subscribes to the philosophy that missing values should never silently go missing**)
+
+```{r}
+ggplot(data = diamonds2, mapping = aes(x = x, y = y)) + 
+  geom_point()
+
+# ggplot(data = diamonds2, mapping = aes(x = x, y = y)) + geom_point(na.rm = TRUE)
+```
+
+
+```{r}
+flights %>% 
+  mutate(
+    cancelled = is.na(dep_time),
+    sched_hour = sched_dep_time %/% 100,
+    sched_min = sched_dep_time %% 100,
+    sched_dep_time = sched_hour + sched_min / 60
+  ) %>%
+ ggplot(mapping = aes(sched_dep_time)) + 
+    geom_freqpoly(mapping = aes(colour = cancelled), binwidth = 1/4)
+
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
